@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chicago Rp</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="marca">Chicago Rp</div>
+    <nav>
+      <a href="/">Inicio</a>
+      <a href="/civil/">Civil</a>
+      <a href="/postulantes/">Postulantes</a>
+      <a href="/staff/">Staff</a>
+    </nav>
+  </header>
+
+  <main>
+    <div id="aviso"></div>
+
+    <div class="card">
+      <h1>Bienvenido a Chicago Rp</h1>
+      <p class="muted">
+        Información general del servidor, normativa y contenido para la comunidad.
+      </p>
+      <p>
+        Para acceder a las secciones de <strong>Staff</strong>, <strong>Postulantes</strong>
+        o el apartado de <strong>Civil</strong>, inicia sesión con tu cuenta de Discord.
+        El acceso a cada sección depende del rol que tengas en el servidor.
+      </p>
+      <a class="btn" href="/api/login">Iniciar sesión con Discord</a>
+    </div>
+
+    <div class="card">
+      <h2>Sobre el servidor</h2>
+      <p>
+        Aquí va la información general de Chicago Rp: normas básicas, cómo unirse,
+        redes sociales, etc. Este contenido es público, cualquier visitante lo puede ver.
+      </p>
+    </div>
+  </main>
+
+  <script>
+    // Muestra un aviso si el usuario fue redirigido aquí por no tener el rol necesario
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("acceso") === "denegado") {
+      document.getElementById("aviso").innerHTML =
+        '<div class="aviso-error">No tienes el rol necesario para ver esa sección.</div>';
+    }
+  </script>
+</body>
+</html>
