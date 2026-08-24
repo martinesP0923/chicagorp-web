@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Postulantes - Chicago Rp</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="marca">Chicago Rp</div>
+    <nav>
+      <a href="/">Inicio</a>
+      <a href="/civil/">Civil</a>
+      <a href="/postulantes/">Postulantes</a>
+      <a href="/staff/">Staff</a>
+      <a href="/api/logout">Cerrar sesión</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <h1>Zona de Postulantes</h1>
+      <p class="muted">Solo visible para miembros con rol de Postulante.</p>
+      <p>Aquí puedes explicar el proceso de postulación y dejar el formulario.</p>
+    </div>
+
+    <div class="card">
+      <h2>Formulario de postulación</h2>
+      <form>
+        <label for="nombre">Nombre en el servidor</label>
+        <input id="nombre" name="nombre" type="text" required />
+
+        <label for="cargo">Cargo al que postulas</label>
+        <select id="cargo" name="cargo">
+          <option>Policía</option>
+          <option>Bombero</option>
+          <option>Civil especial</option>
+        </select>
+
+        <label for="motivo">¿Por qué quieres este cargo?</label>
+        <textarea id="motivo" name="motivo" rows="4"></textarea>
+
+        <br /><br />
+        <button class="btn" type="submit">Enviar postulación</button>
+      </form>
+      <p class="muted" style="margin-top:12px;">
+        Nota: este formulario es solo visual por ahora. Cuando quieras que las
+        postulaciones se guarden de verdad, lo conectamos en un siguiente paso.
+      </p>
+    </div>
+  </main>
+</body>
+</html>
