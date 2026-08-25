@@ -5,7 +5,7 @@ export async function onRequestGet({ request, env }) {
   const code = url.searchParams.get("code");
 
   if (!code) {
-    return Response.redirect(`${url.origin}/?acceso=denegado`, 302);
+    return Response.redirect(`${url.origin}/?acceso=denegado&paso=sin_code`, 302);
   }
 
   const redirectUri = `${url.origin}/api/callback`;
@@ -23,7 +23,11 @@ export async function onRequestGet({ request, env }) {
   });
 
   if (!tokenRes.ok) {
-    return Response.redirect(`${url.origin}/?acceso=denegado`, 302);
+    const detalle = await tokenRes.text();
+    return Response.redirect(
+      `${url.origin}/?acceso=denegado&paso=token&status=${tokenRes.status}&detalle=${encodeURIComponent(detalle.slice(0, 200))}`,
+      302
+    );
   }
   const tokenData = await tokenRes.json();
 
@@ -31,7 +35,11 @@ export async function onRequestGet({ request, env }) {
     headers: { Authorization: `Bearer ${tokenData.access_token}` },
   });
   if (!userRes.ok) {
-    return Response.redirect(`${url.origin}/?acceso=denegado`, 302);
+    const detalle = await userRes.text();
+    return Response.redirect(
+      `${url.origin}/?acceso=denegado&paso=usuario&status=${userRes.status}&detalle=${encodeURIComponent(detalle.slice(0, 200))}`,
+      302
+    );
   }
   const user = await userRes.json();
 
@@ -41,7 +49,11 @@ export async function onRequestGet({ request, env }) {
   );
 
   if (!memberRes.ok) {
-    return Response.redirect(`${url.origin}/?acceso=denegado`, 302);
+    const detalle = await memberRes.text();
+    return Response.redirect(
+      `${url.origin}/?acceso=denegado&paso=miembro&status=${memberRes.status}&detalle=${encodeURIComponent(detalle.slice(0, 200))}`,
+      302
+    );
   }
   const member = await memberRes.json();
 
