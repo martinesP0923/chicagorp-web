@@ -9,7 +9,7 @@ export async function onRequest({ request, next, env }) {
     return Response.redirect(`${url.origin}/?acceso=denegado`, 302);
   }
 
-  const allowedRoles = (env.POSTULANTE_ROLE_IDS || "")
+  const allowedRoles = (env.CRIMINAL_ROLE_IDS || "")
     .split(",")
     .map((r) => r.trim())
     .filter(Boolean);
