@@ -18,6 +18,7 @@ functions/             → backend (corre en Cloudflare, nunca en el navegador)
   staff/_middleware.js       → protege todo lo que está dentro de /staff/
   postulantes/_middleware.js → protege todo lo que está dentro de /postulantes/
   civil/_middleware.js       → protege todo lo que está dentro de /civil/
+  por eso se debe revisar antes de publicar
 ```
 
 ## Cómo subir esto a GitHub (sin usar la terminal)
