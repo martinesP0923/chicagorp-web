@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buscar Ciudadano - Chicago Rp</title>
+  <link rel="icon" type="image/png" href="/images/favicon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="marca">
+      <img src="/images/logo-header.png" alt="Chicago Rp" />
+      <span>Chicago Rp</span>
+    </div>
+    <nav>
+      <a href="/policia/">Policía</a>
+      <a href="/api/logout">Cerrar sesión</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <h1>Buscar Ciudadano</h1>
+      <p class="muted">Busca por Nombre de Discord, Nombre IC, Apellidos, o N° de DNI.</p>
+      <input id="buscador" type="text" placeholder="Escribe para buscar..." />
+    </div>
+
+    <div id="resultados"></div>
+  </main>
+
+  <script>
+    async function buscar(texto) {
+      const contenedor = document.getElementById("resultados");
+      if (!texto) {
+        contenedor.innerHTML = "";
+        return;
+      }
+      contenedor.innerHTML = '<p class="muted">Buscando...</p>';
+
+      const res = await fetch(`/api/buscar-ciudadano?buscar=${encodeURIComponent(texto)}`);
+      const perfiles = await res.json();
+
+      if (!Array.isArray(perfiles) || !perfiles.length) {
+        contenedor.innerHTML = '<p class="muted">No se encontraron ciudadanos.</p>';
+        return;
+      }
+
+      contenedor.innerHTML = perfiles
+        .map((p) => {
+          const multasHtml = p.multas.length
+            ? p.multas
+                .map(
+                  (m) =>
+                    `<div class="card" style="margin-bottom:8px;">${m.motivo} — <span class="muted">Monto: ${m.monto} · ${m.oficial} · ${new Date(m.fecha).toLocaleString()}</span></div>`
+                )
+                .join("")
+            : '<p class="muted">Sin multas registradas.</p>';
+
+          const arrestosHtml = p.arrestos.length
+            ? p.arrestos
+                .map(
+                  (a) =>
+                    `<div class="card" style="margin-bottom:8px;">${a.motivo} — <span class="muted">Tiempo: ${a.tiempo} · ${a.oficial} · ${new Date(a.fecha).toLocaleString()}</span></div>`
+                )
+                .join("")
+            : '<p class="muted">Sin arrestos registrados.</p>';
+
+          return `
+            <div class="card">
+              <div style="display:flex; gap:16px; align-items:center;">
+                ${p.foto ? `<img src="${p.foto}" style="width:90px; height:90px; border-radius:8px; object-fit:cover;" />` : ""}
+                <div>
+                  <h2 style="margin:0;">${p.nombre_ic} ${p.apellidos}</h2>
+                  <p class="muted" style="margin:4px 0;">Discord: ${p.discord_username} · Edad: ${p.edad} · Nacionalidad: ${p.nacionalidad}</p>
+                  <p class="muted" style="margin:4px 0;">N° de DNI: ${p.dni}</p>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <h3>Multas</h3>
+              ${multasHtml}
+            </div>
+            <div class="card">
+              <h3>Arrestos</h3>
+              ${arrestosHtml}
+            </div>
+          `;
+        })
+        .join("<hr style='border-color:#23262e; margin:24px 0;'/>");
+    }
+
+    const buscador = document.getElementById("buscador");
+    let temporizador;
+    buscador.addEventListener("input", () => {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(() => buscar(buscador.value.trim()), 300);
+    });
+  </script>
+</body>
+</html>
