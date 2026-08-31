@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administrar Arrestos - Chicago Rp</title>
+  <link rel="icon" type="image/png" href="/images/favicon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="marca">
+      <img src="/images/logo-header.png" alt="Chicago Rp" />
+      <span>Chicago Rp</span>
+    </div>
+    <nav>
+      <a href="/staff/">Staff</a>
+      <a href="/api/logout">Cerrar sesión</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <h1>Administrar Arrestos</h1>
+      <p class="muted">Aquí puedes editar o eliminar cualquier arresto registrado.</p>
+      <input id="buscador" type="text" placeholder="Buscar por nombre de Discord..." />
+    </div>
+
+    <div id="lista"></div>
+  </main>
+
+  <script>
+    async function cargar(buscar) {
+      const contenedor = document.getElementById("lista");
+      contenedor.innerHTML = '<p class="muted">Cargando...</p>';
+      const qs = buscar ? `?buscar=${encodeURIComponent(buscar)}` : "";
+      const res = await fetch(`/api/arrestos${qs}`);
+      const arrestos = await res.json();
+
+      if (!Array.isArray(arrestos) || !arrestos.length) {
+        contenedor.innerHTML = '<p class="muted">No hay arrestos.</p>';
+        return;
+      }
+
+      contenedor.innerHTML = arrestos
+        .map(
+          (a) => `
+        <div class="card" id="fila-${a.id}">
+          <div class="vista">
+            <strong>${a.ciudadano}</strong> — ${a.motivo}<br/>
+            <span class="muted">Tiempo: ${a.tiempo} · Registrado por: ${a.oficial} · ${new Date(a.fecha).toLocaleString()}</span><br/><br/>
+            <button class="btn" onclick="mostrarEdicion(${a.id})">Editar</button>
+            <button class="btn" style="background:#ef4444; margin-left:8px;" onclick="eliminar(${a.id})">Eliminar</button>
+          </div>
+          <div class="edicion" style="display:none;">
+            <label>Ciudadano</label>
+            <input type="text" id="ciudadano-${a.id}" value="${a.ciudadano}" />
+            <label>Motivo</label>
+            <input type="text" id="motivo-${a.id}" value="${a.motivo}" />
+            <label>Tiempo</label>
+            <input type="text" id="tiempo-${a.id}" value="${a.tiempo}" />
+            <br/><br/>
+            <button class="btn" onclick="guardar(${a.id})">Guardar</button>
+            <button class="btn" style="background:#2a2e38; margin-left:8px;" onclick="cancelar(${a.id})">Cancelar</button>
+          </div>
+        </div>
+      `
+        )
+        .join("");
+    }
+
+    function mostrarEdicion(id) {
+      document.querySelector(`#fila-${id} .vista`).style.display = "none";
+      document.querySelector(`#fila-${id} .edicion`).style.display = "block";
+    }
+
+    function cancelar(id) {
+      document.querySelector(`#fila-${id} .vista`).style.display = "block";
+      document.querySelector(`#fila-${id} .edicion`).style.display = "none";
+    }
+
+    async function guardar(id) {
+      const ciudadano = document.getElementById(`ciudadano-${id}`).value;
+      const motivo = document.getElementById(`motivo-${id}`).value;
+      const tiempo = document.getElementById(`tiempo-${id}`).value;
+
+      await fetch("/api/arrestos", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ciudadano, motivo, tiempo }),
+      });
+
+      cargar(document.getElementById("buscador").value.trim());
+    }
+
+    async function eliminar(id) {
+      if (!confirm("¿Seguro que quieres eliminar este arresto?")) return;
+      await fetch(`/api/arrestos?id=${id}`, { method: "DELETE" });
+      cargar(document.getElementById("buscador").value.trim());
+    }
+
+    const buscador = document.getElementById("buscador");
+    let temporizador;
+    buscador.addEventListener("input", () => {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(() => cargar(buscador.value.trim()), 300);
+    });
+
+    cargar("");
+  </script>
+</body>
+</html>

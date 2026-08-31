@@ -1,19 +1,23 @@
 import { readCookie, verifySessionCookie } from "../lib/session.js";
 
-async function esPolicia(request, env) {
+async function getSesion(request, env) {
   const cookieValue = readCookie(request, "chicagorp_session");
-  const session = await verifySessionCookie(cookieValue, env.SESSION_SECRET);
-  if (!session) return { ok: false };
-
-  const allowedRoles = (env.POLICIA_ROLE_IDS || "").split(",").map((r) => r.trim()).filter(Boolean);
-  const tieneAcceso = session.roles.some((r) => allowedRoles.includes(r));
-  return { ok: tieneAcceso, session };
+  return verifySessionCookie(cookieValue, env.SESSION_SECRET);
 }
 
-// GET /api/multas?buscar=nombre -> lista de multas (solo Policia), opcionalmente filtrada
+function tieneRol(session, env, variable) {
+  if (!session) return false;
+  const roles = (env[variable] || "").split(",").map((r) => r.trim()).filter(Boolean);
+  return session.roles.some((r) => roles.includes(r));
+}
+
+// GET /api/multas?buscar=nombre -> Policia y Staff pueden ver
 export async function onRequestGet({ request, env }) {
-  const { ok } = await esPolicia(request, env);
-  if (!ok) {
+  const session = await getSesion(request, env);
+  const esPolicia = tieneRol(session, env, "POLICIA_ROLE_IDS");
+  const esStaff = tieneRol(session, env, "STAFF_ROLE_IDS");
+
+  if (!esPolicia && !esStaff) {
     return new Response(JSON.stringify({ error: "No autorizado" }), { status: 403 });
   }
 
@@ -40,8 +44,9 @@ export async function onRequestGet({ request, env }) {
 // POST /api/multas -> crea una multa nueva (solo Policia)
 export async function onRequestPost({ request, env }) {
   const url = new URL(request.url);
-  const { ok, session } = await esPolicia(request, env);
-  if (!ok) {
+  const session = await getSesion(request, env);
+
+  if (!tieneRol(session, env, "POLICIA_ROLE_IDS")) {
     return Response.redirect(`${url.origin}/?acceso=denegado`, 302);
   }
 
@@ -63,4 +68,48 @@ export async function onRequestPost({ request, env }) {
     .run();
 
   return Response.redirect(`${url.origin}/multas/`, 302);
+}
+
+// PUT /api/multas -> editar (solo Staff)
+export async function onRequestPut({ request, env }) {
+  const session = await getSesion(request, env);
+  if (!tieneRol(session, env, "STAFF_ROLE_IDS")) {
+    return new Response(JSON.stringify({ error: "No autorizado" }), { status: 403 });
+  }
+
+  const body = await request.json();
+  const { id, ciudadano, motivo, monto } = body;
+  if (!id) {
+    return new Response(JSON.stringify({ error: "Falta id" }), { status: 400 });
+  }
+
+  await env.DB.prepare(
+    "UPDATE multas SET ciudadano = ?, motivo = ?, monto = ? WHERE id = ?"
+  )
+    .bind(ciudadano, motivo, monto, id)
+    .run();
+
+  return new Response(JSON.stringify({ ok: true }), {
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+// DELETE /api/multas?id=5 -> eliminar (solo Staff)
+export async function onRequestDelete({ request, env }) {
+  const session = await getSesion(request, env);
+  if (!tieneRol(session, env, "STAFF_ROLE_IDS")) {
+    return new Response(JSON.stringify({ error: "No autorizado" }), { status: 403 });
+  }
+
+  const url = new URL(request.url);
+  const id = url.searchParams.get("id");
+  if (!id) {
+    return new Response(JSON.stringify({ error: "Falta id" }), { status: 400 });
+  }
+
+  await env.DB.prepare("DELETE FROM multas WHERE id = ?").bind(id).run();
+
+  return new Response(JSON.stringify({ ok: true }), {
+    headers: { "Content-Type": "application/json" },
+  });
 }
