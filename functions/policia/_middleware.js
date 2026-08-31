@@ -17,7 +17,15 @@ export async function onRequest({ request, next, env }) {
   const tieneAcceso = session.roles.some((r) => allowedRoles.includes(r));
 
   if (!tieneAcceso) {
-    return Response.redirect(`${url.origin}/?acceso=denegado`, 302);
+    return new Response(
+      JSON.stringify({
+        env_crudo: env.POLICIA_ROLE_IDS,
+        allowedRoles,
+        sessionRoles: session.roles,
+        tieneAcceso,
+      }, null, 2),
+      { headers: { "Content-Type": "application/json" } }
+    );
   }
 
   return next();
