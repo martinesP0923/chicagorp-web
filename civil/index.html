@@ -24,3 +24,38 @@
       <h1>Zona de Civiles</h1>
       <p class="muted">Solo visible para miembros con rol de Civil (o superior).</p>
       <p>Aquí va el contenido exclusivo para miembros del servidor: normas detalladas, guías,
+            </div>
+
+    <div class="card">
+      <h2>Tus multas</h2>
+      <div id="mis-multas" class="muted">Cargando...</div>
+    </div>
+
+    <script>
+      async function cargarMisMultas() {
+        const contenedor = document.getElementById("mis-multas");
+        try {
+          const res = await fetch("/api/mis-multas");
+          const multas = await res.json();
+
+          if (!Array.isArray(multas) || !multas.length) {
+            contenedor.innerHTML = "No tienes multas registradas.";
+            return;
+          }
+
+          contenedor.innerHTML = multas
+            .map(
+              (m) => `
+              <div class="card" style="margin-bottom:10px;">
+                ${m.motivo}<br/>
+                <span class="muted">Monto: ${m.monto} · Registrada por: ${m.oficial} · ${new Date(m.fecha).toLocaleString()}</span>
+              </div>
+            `
+            )
+            .join("");
+        } catch (e) {
+          contenedor.innerHTML = "Error al cargar tus multas.";
+        }
+      }
+      cargarMisMultas();
+    </script>

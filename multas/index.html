@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multas - Chicago Rp</title>
+  <link rel="icon" type="image/png" href="/images/favicon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="marca">
+      <img src="/images/logo-header.png" alt="Chicago Rp" />
+      <span>Chicago Rp</span>
+    </div>
+    <nav>
+      <a href="/">Inicio</a>
+      <a href="/api/logout">Cerrar sesión</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <h1>Registrar multa</h1>
+      <p class="muted">El campo "Nombre de Discord" debe ser exactamente el nombre de usuario de Discord del ciudadano (no el apodo del servidor).</p>
+      <form method="POST" action="/api/multas">
+        <label for="ciudadano">Nombre de Discord del ciudadano</label>
+        <input id="ciudadano" name="ciudadano" type="text" required placeholder="ej: martines_092313" />
+
+        <label for="motivo">Motivo de la multa</label>
+        <input id="motivo" name="motivo" type="text" required />
+
+        <label for="monto">Monto</label>
+        <input id="monto" name="monto" type="text" required />
+
+        <br /><br />
+        <button class="btn" type="submit">Registrar</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Buscar multas por ciudadano</h2>
+      <input id="buscador" type="text" placeholder="Escribe un nombre de Discord..." />
+      <div id="lista-multas" class="muted" style="margin-top:16px;">Cargando...</div>
+    </div>
+  </main>
+
+  <script>
+    async function cargarMultas(buscar) {
+      const contenedor = document.getElementById("lista-multas");
+      contenedor.innerHTML = "Cargando...";
+      try {
+        const qs = buscar ? `?buscar=${encodeURIComponent(buscar)}` : "";
+        const res = await fetch(`/api/multas${qs}`);
+        const multas = await res.json();
+
+        if (!Array.isArray(multas) || !multas.length) {
+          contenedor.innerHTML = "No hay multas para mostrar.";
+          return;
+        }
+
+        contenedor.innerHTML = multas
+          .map(
+            (m) => `
+            <div class="card" style="margin-bottom:10px;">
+              <strong>${m.ciudadano}</strong> — ${m.motivo}<br/>
+              <span class="muted">Monto: ${m.monto} · Registrada por: ${m.oficial} · ${new Date(m.fecha).toLocaleString()}</span>
+            </div>
+          `
+          )
+          .join("");
+      } catch (e) {
+        contenedor.innerHTML = "Error al cargar las multas.";
+      }
+    }
+
+    const buscador = document.getElementById("buscador");
+    let temporizador;
+    buscador.addEventListener("input", () => {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(() => cargarMultas(buscador.value.trim()), 300);
+    });
+
+    cargarMultas("");
+  </script>
+</body>
+</html>
