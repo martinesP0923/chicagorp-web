@@ -1,4 +1,5 @@
 import { readCookie, verifySessionCookie } from "../lib/session.js";
+import { resolverDiscordUsername, buscarDiscordUsernames } from "../lib/dni-helpers.js";
 
 async function getSesion(request, env) {
   const cookieValue = readCookie(request, "chicagorp_session");
@@ -25,9 +26,12 @@ export async function onRequestGet({ request, env }) {
 
   let query;
   if (buscar) {
-    query = env.DB.prepare(
-      "SELECT id, ciudadano, motivo, tiempo, oficial, fecha FROM arrestos WHERE ciudadano LIKE ? ORDER BY id DESC"
-    ).bind(`%${buscar}%`);
+    const coincidencias = await buscarDiscordUsernames(env, buscar);
+    const placeholders = coincidencias.map(() => "?").join(",");
+    const sql = `SELECT id, ciudadano, motivo, tiempo, oficial, fecha FROM arrestos
+                 WHERE ciudadano LIKE ?${coincidencias.length ? ` OR ciudadano IN (${placeholders})` : ""}
+                 ORDER BY id DESC`;
+    query = env.DB.prepare(sql).bind(`%${buscar}%`, ...coincidencias);
   } else {
     query = env.DB.prepare(
       "SELECT id, ciudadano, motivo, tiempo, oficial, fecha FROM arrestos ORDER BY id DESC"
@@ -49,14 +53,15 @@ export async function onRequestPost({ request, env }) {
   }
 
   const data = await request.formData();
-  const ciudadano = (data.get("ciudadano") || "").toString().trim();
+  const identificador = (data.get("identificador") || "").toString().trim();
   const motivo = (data.get("motivo") || "").toString().trim();
   const tiempo = (data.get("tiempo") || "").toString().trim();
 
-  if (!ciudadano || !motivo || !tiempo) {
+  if (!identificador || !motivo || !tiempo) {
     return Response.redirect(`${url.origin}/arrestos/`, 302);
   }
 
+  const ciudadano = await resolverDiscordUsername(env, identificador);
   const fecha = new Date().toISOString();
 
   await env.DB.prepare(
@@ -68,7 +73,6 @@ export async function onRequestPost({ request, env }) {
   return Response.redirect(`${url.origin}/arrestos/`, 302);
 }
 
-// PUT /api/arrestos -> editar (solo Staff)
 export async function onRequestPut({ request, env }) {
   const session = await getSesion(request, env);
   if (!tieneRol(session, env, "STAFF_ROLE_IDS")) {
@@ -92,7 +96,6 @@ export async function onRequestPut({ request, env }) {
   });
 }
 
-// DELETE /api/arrestos?id=5 -> eliminar (solo Staff)
 export async function onRequestDelete({ request, env }) {
   const session = await getSesion(request, env);
   if (!tieneRol(session, env, "STAFF_ROLE_IDS")) {

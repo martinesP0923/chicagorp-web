@@ -24,8 +24,8 @@
       <h1>Registrar multa</h1>
       <p class="muted">El campo "Nombre de Discord" debe ser exactamente el nombre de usuario de Discord del ciudadano (no el apodo del servidor).</p>
       <form method="POST" action="/api/multas">
-        <label for="ciudadano">Nombre de Discord del ciudadano</label>
-        <input id="ciudadano" name="ciudadano" type="text" required placeholder="ej: martines_092313" />
+        <label for="identificador">Nombre de Discord, Nombre IC, o N° de DNI</label>
+        <input id="identificador" name="identificador" type="text" required placeholder="ej: martines_092313, Juan Perez, o 1234567890" />
 
         <label for="motivo">Motivo de la multa</label>
         <input id="motivo" name="motivo" type="text" required />

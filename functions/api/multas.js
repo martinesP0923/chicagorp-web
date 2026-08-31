@@ -1,4 +1,5 @@
 import { readCookie, verifySessionCookie } from "../lib/session.js";
+import { resolverDiscordUsername, buscarDiscordUsernames } from "../lib/dni-helpers.js";
 
 async function getSesion(request, env) {
   const cookieValue = readCookie(request, "chicagorp_session");
@@ -11,7 +12,7 @@ function tieneRol(session, env, variable) {
   return session.roles.some((r) => roles.includes(r));
 }
 
-// GET /api/multas?buscar=nombre -> Policia y Staff pueden ver
+// GET /api/multas?buscar=texto -> busca por Discord, Nombre IC o DNI
 export async function onRequestGet({ request, env }) {
   const session = await getSesion(request, env);
   const esPolicia = tieneRol(session, env, "POLICIA_ROLE_IDS");
@@ -26,9 +27,12 @@ export async function onRequestGet({ request, env }) {
 
   let query;
   if (buscar) {
-    query = env.DB.prepare(
-      "SELECT id, ciudadano, motivo, monto, oficial, fecha FROM multas WHERE ciudadano LIKE ? ORDER BY id DESC"
-    ).bind(`%${buscar}%`);
+    const coincidencias = await buscarDiscordUsernames(env, buscar);
+    const placeholders = coincidencias.map(() => "?").join(",");
+    const sql = `SELECT id, ciudadano, motivo, monto, oficial, fecha FROM multas
+                 WHERE ciudadano LIKE ?${coincidencias.length ? ` OR ciudadano IN (${placeholders})` : ""}
+                 ORDER BY id DESC`;
+    query = env.DB.prepare(sql).bind(`%${buscar}%`, ...coincidencias);
   } else {
     query = env.DB.prepare(
       "SELECT id, ciudadano, motivo, monto, oficial, fecha FROM multas ORDER BY id DESC"
@@ -41,7 +45,7 @@ export async function onRequestGet({ request, env }) {
   });
 }
 
-// POST /api/multas -> crea una multa nueva (solo Policia)
+// POST /api/multas -> registra usando Discord, Nombre IC o DNI
 export async function onRequestPost({ request, env }) {
   const url = new URL(request.url);
   const session = await getSesion(request, env);
@@ -51,14 +55,15 @@ export async function onRequestPost({ request, env }) {
   }
 
   const data = await request.formData();
-  const ciudadano = (data.get("ciudadano") || "").toString().trim();
+  const identificador = (data.get("identificador") || "").toString().trim();
   const motivo = (data.get("motivo") || "").toString().trim();
   const monto = (data.get("monto") || "").toString().trim();
 
-  if (!ciudadano || !motivo || !monto) {
+  if (!identificador || !motivo || !monto) {
     return Response.redirect(`${url.origin}/multas/`, 302);
   }
 
+  const ciudadano = await resolverDiscordUsername(env, identificador);
   const fecha = new Date().toISOString();
 
   await env.DB.prepare(
