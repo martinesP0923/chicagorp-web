@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi DNI - Chicago Rp</title>
+  <link rel="icon" type="image/png" href="/images/favicon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="marca">
+      <img src="/images/logo-header.png" alt="Chicago Rp" />
+      <span>Chicago Rp</span>
+    </div>
+    <nav>
+      <a href="/civil/">Ciudadano</a>
+      <a href="/api/logout">Cerrar sesión</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card" id="tarjeta-actual" style="display:none;">
+      <h1>Tu documento de identidad</h1>
+      <div id="vista-dni"></div>
+      <br />
+      <button class="btn" onclick="mostrarFormulario()">Editar datos</button>
+    </div>
+
+    <div class="card" id="formulario-card">
+      <h1>Registrar / actualizar DNI</h1>
+      <p class="muted">El número de DNI se genera automáticamente y no cambia una vez creado.</p>
+      <form id="form-dni" method="POST" action="/api/dni">
+        <label for="nombre_ic">Nombre (IC)</label>
+        <input id="nombre_ic" name="nombre_ic" type="text" required />
+
+        <label for="apellidos">Apellidos</label>
+        <input id="apellidos" name="apellidos" type="text" required />
+
+        <label for="edad">Edad</label>
+        <input id="edad" name="edad" type="number" required />
+
+        <label for="nacionalidad">Nacionalidad</label>
+        <input id="nacionalidad" name="nacionalidad" type="text" required />
+
+        <label for="foto_input">Foto de tu rostro</label>
+        <input id="foto_input" type="file" accept="image/*" />
+        <input type="hidden" id="foto" name="foto" />
+        <br />
+        <img id="preview" style="max-width:150px; border-radius:8px; margin-top:10px; display:none;" />
+
+        <br /><br />
+        <button class="btn" type="submit">Guardar</button>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById("foto_input").addEventListener("change", (e) => {
+      const archivo = e.target.files[0];
+      if (!archivo) return;
+
+      const lector = new FileReader();
+      lector.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const tam = 300;
+          canvas.width = tam;
+          canvas.height = tam;
+          const ctx = canvas.getContext("2d");
+          const escala = Math.max(tam / img.width, tam / img.height);
+          const x = (tam - img.width * escala) / 2;
+          const y = (tam - img.height * escala) / 2;
+          ctx.drawImage(img, x, y, img.width * escala, img.height * escala);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          document.getElementById("foto").value = dataUrl;
+          document.getElementById("preview").src = dataUrl;
+          document.getElementById("preview").style.display = "block";
+        };
+        img.src = ev.target.result;
+      };
+      lector.readAsDataURL(archivo);
+    });
+
+    function mostrarFormulario() {
+      document.getElementById("tarjeta-actual").style.display = "none";
+      document.getElementById("formulario-card").style.display = "block";
+    }
+
+    async function cargar() {
+      const res = await fetch("/api/dni");
+      const data = await res.json();
+
+      if (data.propia) {
+        document.getElementById("formulario-card").style.display = "none";
+        document.getElementById("tarjeta-actual").style.display = "block";
+        const p = data.propia;
+        document.getElementById("vista-dni").innerHTML = `
+          ${p.foto ? `<img src="${p.foto}" style="max-width:150px; border-radius:8px; margin-bottom:12px;" />` : ""}
+          <p><strong>Nombre:</strong> ${p.nombre_ic} ${p.apellidos}</p>
+          <p><strong>Edad:</strong> ${p.edad}</p>
+          <p><strong>Nacionalidad:</strong> ${p.nacionalidad}</p>
+          <p><strong>N° de DNI:</strong> ${p.dni}</p>
+        `;
+
+        document.getElementById("nombre_ic").value = p.nombre_ic;
+        document.getElementById("apellidos").value = p.apellidos;
+        document.getElementById("edad").value = p.edad;
+        document.getElementById("nacionalidad").value = p.nacionalidad;
+        if (p.foto) {
+          document.getElementById("preview").src = p.foto;
+          document.getElementById("preview").style.display = "block";
+          document.getElementById("foto").value = p.foto;
+        }
+      }
+    }
+
+    cargar();
+  </script>
+</body>
+</html>
