@@ -59,3 +59,36 @@
       }
       cargarMisMultas();
     </script>
+    <div class="card">
+  <h2>Tus arrestos</h2>
+  <div id="mis-arrestos" class="muted">Cargando...</div>
+</div>
+
+<script>
+  async function cargarMisArrestos() {
+    const contenedor = document.getElementById("mis-arrestos");
+    try {
+      const res = await fetch("/api/mis-arrestos");
+      const arrestos = await res.json();
+
+      if (!Array.isArray(arrestos) || !arrestos.length) {
+        contenedor.innerHTML = "No tienes arrestos registrados.";
+        return;
+      }
+
+      contenedor.innerHTML = arrestos
+        .map(
+          (a) => `
+          <div class="card" style="margin-bottom:10px;">
+            ${a.motivo}<br/>
+            <span class="muted">Tiempo: ${a.tiempo} · Registrado por: ${a.oficial} · ${new Date(a.fecha).toLocaleString()}</span>
+          </div>
+        `
+        )
+        .join("");
+    } catch (e) {
+      contenedor.innerHTML = "Error al cargar tus arrestos.";
+    }
+  }
+  cargarMisArrestos();
+</script>

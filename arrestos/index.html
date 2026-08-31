@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arrestos - Chicago Rp</title>
+  <link rel="icon" type="image/png" href="/images/favicon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="marca">
+      <img src="/images/logo-header.png" alt="Chicago Rp" />
+      <span>Chicago Rp</span>
+    </div>
+    <nav>
+      <a href="/">Inicio</a>
+      <a href="/api/logout">Cerrar sesión</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <h1>Registrar arresto</h1>
+      <p class="muted">El campo "Nombre de Discord" debe ser exactamente el nombre de usuario de Discord del ciudadano.</p>
+      <form method="POST" action="/api/arrestos">
+        <label for="ciudadano">Nombre de Discord del ciudadano</label>
+        <input id="ciudadano" name="ciudadano" type="text" required placeholder="ej: martines_092313" />
+
+        <label for="motivo">Motivo / cargos</label>
+        <input id="motivo" name="motivo" type="text" required />
+
+        <label for="tiempo">Tiempo de condena</label>
+        <input id="tiempo" name="tiempo" type="text" required placeholder="ej: 15 minutos" />
+
+        <br /><br />
+        <button class="btn" type="submit">Registrar</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Buscar arrestos por ciudadano</h2>
+      <input id="buscador" type="text" placeholder="Escribe un nombre de Discord..." />
+      <div id="lista-arrestos" class="muted" style="margin-top:16px;">Cargando...</div>
+    </div>
+  </main>
+
+  <script>
+    async function cargarArrestos(buscar) {
+      const contenedor = document.getElementById("lista-arrestos");
+      contenedor.innerHTML = "Cargando...";
+      try {
+        const qs = buscar ? `?buscar=${encodeURIComponent(buscar)}` : "";
+        const res = await fetch(`/api/arrestos${qs}`);
+        const arrestos = await res.json();
+
+        if (!Array.isArray(arrestos) || !arrestos.length) {
+          contenedor.innerHTML = "No hay arrestos para mostrar.";
+          return;
+        }
+
+        contenedor.innerHTML = arrestos
+          .map(
+            (a) => `
+            <div class="card" style="margin-bottom:10px;">
+              <strong>${a.ciudadano}</strong> — ${a.motivo}<br/>
+              <span class="muted">Tiempo: ${a.tiempo} · Registrado por: ${a.oficial} · ${new Date(a.fecha).toLocaleString()}</span>
+            </div>
+          `
+          )
+          .join("");
+      } catch (e) {
+        contenedor.innerHTML = "Error al cargar los arrestos.";
+      }
+    }
+
+    const buscador = document.getElementById("buscador");
+    let temporizador;
+    buscador.addEventListener("input", () => {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(() => cargarArrestos(buscador.value.trim()), 300);
+    });
+
+    cargarArrestos("");
+  </script>
+</body>
+</html>
