@@ -49,14 +49,17 @@
         contenido.innerHTML = `
           <div class="card">
             <h1>Bienvenido a Chicago Rp</h1>
-            <p class="muted">Información general del servidor, normativa y contenido para la comunidad.</p>
-            <p>Inicia sesión con tu cuenta de Discord para acceder a tu sección correspondiente.</p>
-            <a class="btn" href="/api/login">Iniciar sesión con Discord</a>
+            <p class="muted">Hola Bienbenido al portal Digital de CHICAGO RP, aca podras ver información general del servidor.</p>
+            <p>Debes iniciar sesión con tu cuenta de Discord para poder acceder al portal de Chicago.</p>
+            <a class="btn" href="/api/login">Iniciar sesión</a>
           </div>
           <div class="card">
-            <h2>Sobre el servidor</h2>
-            <p>Aquí va la información general de Chicago Rp: normas básicas, cómo unirse, redes sociales, etc. Este contenido es público, cualquier visitante lo puede ver.</p>
-          </div>
+            <h2>Información del Servidor:</h2>
+            <p>En este portal podras ver toda la informacion que tenemos para ti.</p>
+            <p>Si eres policía podra ver la infotmacion de (Arrestos, multas, Base de datos).</p>
+            <p>Si en cambio eres criminal podras ver toda la categoria e informacion criminal (Regristrar una banda etc...).</p>
+            <p>O si eres un ciudadano puedes ver a los ciudadanos que estan en busqueda y captura, registrar su empresa y registrar su datos etc...</p>
+           </div>
         `;
       } else {
         nav.innerHTML = `<a href="/api/logout">Cerrar sesión</a>`;
